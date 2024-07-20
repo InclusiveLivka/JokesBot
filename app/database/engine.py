@@ -9,34 +9,39 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "data.db")
 
+create_table_query = """
+CREATE TABLE IF NOT EXISTS jokes (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    joke        TEXT,
+    grade1      INTEGER,
+    grade2      INTEGER,
+    difference  INTEGER
+)
+"""
+
 
 def initialize_database() -> None:
     """Initialize the database by creating the necessary table if it doesn't
     exist."""
     try:
-        with sqlite3.connect(DB_PATH) as con:
+        with sqlite3.connect(DB_PATH) as connection:
+            cursor = connection.cursor()
+            cursor.execute(create_table_query)
 
-            cur = con.cursor()
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS jokes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    joke TEXT,
-                    grade1 INTEGER,
-                    grade2 INTEGER,
-                    difference INTEGER
-                )
-            """)
-
-            con.commit()
+            connection.commit()
             logger.info("Database initialized successfully.")
-    except sqlite3.Error as e:
-        logger.error(f"Error initializing database: {e}")
+
+    except sqlite3.Error as error:
+        logger.error(f"Error initializing database: {error}")
+
+    except Exception as error:
+        logger.error(f"Unexpected error initializing database: {error}")
 
 
 async def write_grade(joke: str, grade: int) -> None:
     """
     Write a joke and its grade to the database. If the joke already exists,
-    update its grades and calculate the difference.
+    update its grades and calculate the average.
 
     Args:
         joke (str): The joke to write to the database.
@@ -44,62 +49,60 @@ async def write_grade(joke: str, grade: int) -> None:
     """
     try:
         initialize_database()
-        with sqlite3.connect(DB_PATH) as con:
-
-            cur = con.cursor()
-            cur.execute("SELECT id, grade1 FROM jokes WHERE joke = ?", (joke,))
-            result = cur.fetchone()
+        with sqlite3.connect(DB_PATH) as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "SELECT id, grade1 FROM jokes WHERE joke = ?", (joke,))
+            result = cursor.fetchone()
 
             if result:
-                joke_id, grade1 = result
-                if grade1 is not None:
-                    difference = (grade1 + grade) / 2
-                    cur.execute(
-                        "UPDATE jokes SET grade2 = ?, difference = ? WHERE id = ?", (
-                            grade, difference, joke_id
-                        )
+                joke_id, existing_grade = result
+                if existing_grade is not None:
+                    average_grade = (existing_grade + grade) / 2
+                    cursor.execute(
+                        "UPDATE jokes SET grade2 = ?, difference = ? WHERE id = ?",
+                        (grade, average_grade, joke_id)
                     )
-                    logger.info(
-                        f"Joke ID {joke_id} updated with grade2: {grade} and difference: {difference}.")
+
                 else:
-                    cur.execute(
-                        "UPDATE jokes SET grade1 = ? WHERE id = ?", (
-                            grade, joke_id
-                        )
+                    cursor.execute(
+                        "UPDATE jokes SET grade1 = ? WHERE id = ?",
+                        (grade, joke_id)
                     )
-                    logger.info(
-                        f"Joke ID {joke_id} updated with grade1: {grade}.")
+
             else:
-                cur.execute(
-                    "INSERT INTO jokes (joke, grade1) VALUES (?, ?)", (
-                        joke, grade
-                    )
+                cursor.execute(
+                    "INSERT INTO jokes (joke, grade1) VALUES (?, ?)",
+                    (joke, grade)
                 )
-                logger.info("New joke inserted into the database.")
-            con.commit()
-    except sqlite3.Error as e:
-        logger.error(f"Error writing to SQLite: {e}")
+            connection.commit()
+    except sqlite3.Error as error:
+        logger.error(f"Error writing to SQLite: {error}")
+        raise
 
 
 async def read_jokes_from_sqlite() -> List[Tuple[str, int, int, int]]:
     """
-    Read jokes from the database that have both grades.
+    Retrieve jokes from the database that have both grades.
 
     Returns:
         List[Tuple[str, int, int, int]]: A list of jokes with their grades and
         differences.
     """
     try:
-        with sqlite3.connect(DB_PATH) as con:
-            cur = con.cursor()
-            cur.execute("""
-                SELECT joke, grade1, grade2, difference 
-                FROM jokes 
+        with sqlite3.connect(DB_PATH) as connection:
+            cursor = connection.cursor()
+            query = """
+                SELECT joke, grade1, grade2, difference
+                FROM jokes
                 WHERE grade1 IS NOT NULL AND grade2 IS NOT NULL
-            """)
-            data = cur.fetchmany(3)
-            logger.info("Jokes retrieved successfully from the database.")
-            return data
-    except sqlite3.Error as e:
-        logger.error(f"Error reading from SQLite: {e}")
+            """
+            cursor.execute(query)
+            jokes_data = cursor.fetchmany(3)
+        return jokes_data
+    except sqlite3.Error as error:
+        logger.error(f"Error retrieving graded jokes from SQLite: {error}")
         return []
+    finally:
+        if cursor:
+            cursor.close()
