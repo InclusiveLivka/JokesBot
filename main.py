@@ -1,33 +1,63 @@
-
 import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
+from aiogram.exceptions import TelegramAPIError
 
-from app import handlers
+from app.handlers import setup_routers
+from config import BOT_TOKEN
 
-# Настройка логирования
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Ivan and Sanya
 
+async def start_bot() -> None:
+    """
+    Initialize and start the bot with polling.
 
-async def main() -> None:
+    This function sets up the bot instance, dispatcher, and includes necessary
+    routers.
+    It starts the polling process to receive updates from Telegram.
+    """
+    logger.info("Starting bot...")
+
     # Создание экземпляра бота
-    bot = Bot(token="7299584966:AAGmsEIJyGoJe9xfJDABnDrOqp1GpJlx8K8")
+    bot = Bot(token=BOT_TOKEN)
+    logger.info("Bot instance created.")
 
     # Создание диспетчера
     dp = Dispatcher()
+    logger.info("Dispatcher instance created.")
 
     # Включение роутеров
-    dp.include_router(handlers.router)
+    setup_routers(dp)
+    logger.info("Routers included.")
 
     # Запуск поллинга
     try:
+
         await dp.start_polling(bot)
+    except TelegramAPIError as e:
+        logger.error(f"Telegram API Error: {e}")
+
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+
     finally:
         # Закрытие бота
         await bot.session.close()
+        logger.info("Bot session closed.")
+
+
+async def main() -> None:
+    """
+    Main entry point for the bot application.
+
+    This function runs the start_bot coroutine using asyncio.
+    """
+    await start_bot()
 
 if __name__ == "__main__":
+    logger.info("Starting main application...")
     asyncio.run(main())
+    logger.info("Main application stopped.")
