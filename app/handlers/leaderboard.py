@@ -32,7 +32,7 @@ async def get_leaderboard(message: Message) -> None:
             )
 
             await message.answer(
-                "Топ 3 анекдота с высшим баллом:\n" + leaderboard_text
+                "Топ 3 анекдота с высшим баллом:\n\n" + leaderboard_text
             )
             logger.info(f"Sent leaderboard to user {message.from_user.id}")
         else:
