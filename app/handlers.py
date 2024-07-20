@@ -6,6 +6,8 @@ import app.keyboard as kb
 from app.Get_jokes import get_joke
 from app.sql import write_grade, read_jokes_from_sqlite
 
+# привет
+
 
 # подключение роутера
 router = Router()
