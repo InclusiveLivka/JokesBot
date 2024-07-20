@@ -4,7 +4,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery
 
 from app.database.engine import write_grade
-from app.utils.get_jokes import get_random_joke
+from app.utils.jokes import get_random_joke
 from app.keyboards import inline
 
 router = Router()

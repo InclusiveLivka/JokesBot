@@ -4,7 +4,7 @@ from aiogram import F, Router
 from aiogram.types import Message
 
 from app.keyboards import inline
-from app.utils.get_jokes import get_random_joke
+from app.utils.jokes import get_random_joke
 
 router = Router()
 logger = logging.getLogger(__name__)

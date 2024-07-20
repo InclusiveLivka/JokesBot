@@ -27,7 +27,9 @@ async def get_leaderboard(message: Message) -> None:
             # выбор трёх анекдотов с высшим баллом
             top_three_jokes = leaderboard_sorted[:3]
             leaderboard_text = "\n".join(
-                [f"{joke[0]} (Оценка: {joke[3]})" for joke in top_three_jokes])
+                [f"{joke[0]} (Оценка: {joke[3]})\n"
+                 for joke in top_three_jokes]
+            )
 
             await message.answer(
                 "Топ 3 анекдота с высшим баллом:\n" + leaderboard_text
@@ -38,6 +40,7 @@ async def get_leaderboard(message: Message) -> None:
             await message.answer("Нет анекдотов с двумя оценками.")
             logger.info(
                 f"No jokes with two grades for user {message.from_user.id}")
+
     except Exception as e:
         await message.answer("Произошла ошибка при получении лидеров.")
         logger.error(f"Error while getting leaderboard: {e}")
