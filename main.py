@@ -49,15 +49,7 @@ async def start_bot() -> None:
         logger.info("Bot session closed.")
 
 
-async def main() -> None:
-    """
-    Main entry point for the bot application.
-
-    This function runs the start_bot coroutine using asyncio.
-    """
-    await start_bot()
-
 if __name__ == "__main__":
     logger.info("Starting main application...")
-    asyncio.run(main())
+    asyncio.run(start_bot())
     logger.info("Main application stopped.")
