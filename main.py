@@ -9,6 +9,8 @@ from app import handlers
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
+# Ivan and Sanya
+
 
 async def main() -> None:
     # Создание экземпляра бота
